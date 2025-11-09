@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Reset System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: #2575fc;
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .form-container {
+            padding: 30px;
+        }
+        
+        .step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .step.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        input:focus {
+            border-color: #2575fc;
+            box-shadow: 0 0 0 2px rgba(37, 117, 252, 0.2);
+            outline: none;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #2575fc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #1a68e8;
+        }
+        
+        button:disabled {
+            background: #a0c0ff;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+        
+        .success {
+            background: #e7f7ef;
+            color: #0a8f4f;
+            border: 1px solid #b8e6cf;
+        }
+        
+        .error {
+            background: #fde8e8;
+            color: #c53030;
+            border: 1px solid #f5c6c6;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+        
+        .step-indicator .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+        
+        .step-indicator .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #777;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+        
+        .step-indicator .step-item.active .step-number {
+            background: #2575fc;
+            color: white;
+        }
+        
+        .step-indicator .step-label {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .step-indicator .step-item.active .step-label {
+            color: #2575fc;
+            font-weight: 500;
+        }
+        
+        .back-button {
+            background: #f1f5f9;
+            color: #64748b;
+            margin-top: 10px;
+        }
+        
+        .back-button:hover {
+            background: #e2e8f0;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .resend-otp {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        .resend-otp a {
+            color: #2575fc;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .resend-otp a:hover {
+            text-decoration: underline;
+        }
+        
+        .loading {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .loading::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            top: 50%;
+            left: 50%;
+            margin-left: -10px;
+            margin-top: -10px;
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            border-right-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Password Reset</h1>
+        </div>
+        
+        <div class="form-container">
+            <div class="step-indicator">
+                <div class="step-item active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-label">Request OTP</div>
+                </div>
+                <div class="step-item" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-label">Verify OTP</div>
+                </div>
+                <div class="step-item" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-label">Reset Password</div>
+                </div>
+            </div>
+            
+            <div id="message" class="message"></div>
+            
+            <!-- Step 1: Request OTP -->
+            <div id="step1" class="step active">
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" placeholder="Enter your email">
+                </div>
+                <button id="request-otp-btn">Send OTP</button>
+            </div>
+            
+            <!-- Step 2: Verify OTP -->
+            <div id="step2" class="step">
+                <div class="form-group">
+                    <label for="otp">Enter OTP</label>
+                    <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6">
+                </div>
+                <button id="verify-otp-btn">Verify OTP</button>
+                <button class="back-button" id="back-to-step1">Back</button>
+                <div class="resend-otp">
+                    Didn't receive the code? <a id="resend-otp">Resend OTP</a>
+                </div>
+            </div>
+            
+            <!-- Step 3: Reset Password -->
+            <div id="step3" class="step">
+                <div class="form-group">
+                    <label for="new-password">New Password</label>
+                    <input type="password" id="new-password" placeholder="Enter new password">
+                </div>
+                <div class="form-group">
+                    <label for="confirm-password">Confirm Password</label>
+                    <input type="password" id="confirm-password" placeholder="Confirm new password">
+                </div>
+                <button id="reset-password-btn">Reset Password</button>
+                <button class="back-button" id="back-to-step2">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Current step tracking
+        let currentStep = 1;
+        let userEmail = '';
+        let resetToken = '';
+        
+        // DOM Elements
+        const stepElements = document.querySelectorAll('.step');
+        const stepIndicatorItems = document.querySelectorAll('.step-item');
+        const messageElement = document.getElementById('message');
+        
+        // Input Elements
+        const emailInput = document.getElementById('email');
+        const otpInput = document.getElementById('otp');
+        const newPasswordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        
+        // Button Elements
+        const requestOtpBtn = document.getElementById('request-otp-btn');
+        const verifyOtpBtn = document.getElementById('verify-otp-btn');
+        const resetPasswordBtn = document.getElementById('reset-password-btn');
+        const backToStep1Btn = document.getElementById('back-to-step1');
+        const backToStep2Btn = document.getElementById('back-to-step2');
+        const resendOtpLink = document.getElementById('resend-otp');
+        
+        // API Base URL - Adjust this to match your Flask server
+        const API_BASE_URL = 'http://localhost:5000'; // Change if your Flask runs on different port
+        
+        // Show message function
+        function showMessage(message, type) {
+            messageElement.textContent = message;
+            messageElement.className = 'message ' + type;
+            messageElement.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageElement.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // Update step indicators
+        function updateStepIndicator(step) {
+            stepIndicatorItems.forEach(item => {
+                if (parseInt(item.dataset.step) === step) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+        
+        // Navigate to step
+        function goToStep(step) {
+            // Hide all steps
+            stepElements.forEach(element => {
+                element.classList.remove('active');
+            });
+            
+            // Show target step
+            document.getElementById(`step${step}`).classList.add('active');
+            
+            // Update step indicator
+            updateStepIndicator(step);
+            
+            // Update current step
+            currentStep = step;
+            
+            // Hide message when changing steps
+            messageElement.style.display = 'none';
+        }
+        
+        // Set button loading state
+        function setButtonLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.classList.add('loading');
+                button.innerHTML = button.textContent + '...';
+            } else {
+                button.disabled = false;
+                button.classList.remove('loading');
+                // Restore original text based on button type
+                if (button.id === 'request-otp-btn') {
+                    button.textContent = 'Send OTP';
+                } else if (button.id === 'verify-otp-btn') {
+                    button.textContent = 'Verify OTP';
+                } else if (button.id === 'reset-password-btn') {
+                    button.textContent = 'Reset Password';
+                }
+            }
+        }
+        
+        // Request OTP
+        requestOtpBtn.addEventListener('click', async () => {
+            const email = emailInput.value.trim();
+            
+            if (!email) {
+                showMessage('Please enter your email address', 'error');
+                return;
+            }
+            
+            // Simple email validation
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showMessage('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            setButtonLoading(requestOtpBtn, true);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/forgot-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: email.toLowerCase() })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    userEmail = email.toLowerCase();
+                    showMessage('OTP sent successfully to your email', 'success');
+                    goToStep(2);
+                } else {
+                    showMessage(data.error || 'Failed to send OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Network error. Please make sure the server is running on ' + API_BASE_URL, 'error');
+            } finally {
+                setButtonLoading(requestOtpBtn, false);
+            }
+        });
+        
+        // Verify OTP
+        verifyOtpBtn.addEventListener('click', async () => {
+            const otp = otpInput.value.trim();
+            
+            if (!otp || otp.length !== 6) {
+                showMessage('Please enter a valid 6-digit OTP', 'error');
+                return;
+            }
+            
+            setButtonLoading(verifyOtpBtn, true);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/verify-otp`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: userEmail, 
+                        otp: otp 
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resetToken = data.reset_token;
+                    showMessage('OTP verified successfully', 'success');
+                    goToStep(3);
+                } else {
+                    showMessage(data.error || 'Failed to verify OTP', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                setButtonLoading(verifyOtpBtn, false);
+            }
+        });
+        
+        // Reset Password
+        resetPasswordBtn.addEventListener('click', async () => {
+            const newPassword = newPasswordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            
+            if (!newPassword || !confirmPassword) {
+                showMessage('Please fill in all password fields', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showMessage('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            setButtonLoading(resetPasswordBtn, true);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/reset-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        email: userEmail, 
+                        reset_token: resetToken,
+                        new_password: newPassword,
+                        confirm_password: confirmPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Password reset successfully! You can now log in with your new password.', 'success');
+                    
+                    // Reset form after successful password reset
+                    setTimeout(() => {
+                        emailInput.value = '';
+                        otpInput.value = '';
+                        newPasswordInput.value = '';
+                        confirmPasswordInput.value = '';
+                        userEmail = '';
+                        resetToken = '';
+                        goToStep(1);
+                    }, 3000);
+                } else {
+                    showMessage(data.error || 'Failed to reset password', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('Network error. Please try again.', 'error');
+            } finally {
+                setButtonLoading(resetPasswordBtn, false);
+            }
+        });
+        
+        // Back buttons
+        backToStep1Btn.addEventListener('click', () => {
+            goToStep(1);
+        });
+        
+        backToStep2Btn.addEventListener('click', () => {
+            goToStep(2);
+        });
+        
+        // Resend OTP
+        resendOtpLink.addEventListener('click', () => {
+            if (userEmail) {
+                // Trigger the request OTP process again
+                emailInput.value = userEmail;
+                requestOtpBtn.click();
+            }
+        });
+        
+        // Allow Enter key to submit forms
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                if (currentStep === 1) {
+                    requestOtpBtn.click();
+                } else if (currentStep === 2) {
+                    verifyOtpBtn.click();
+                } else if (currentStep === 3) {
+                    resetPasswordBtn.click();
+                }
+            }
+        });
+        
+        // Debug info
+        console.log('Password Reset Frontend Loaded');
+        console.log('API Base URL:', API_BASE_URL);
+    </script>
+</body>
+</html>
